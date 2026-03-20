@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#4a5e1a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="BODY STATS"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <title>Body Stats — Field Assessment Unit</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: #0d1008;
+      color: #7a9e2a;
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .topbar {
+      background: #1a1f0f;
+      border-bottom: 2px solid #4a5e1a;
+      padding: env(safe-area-inset-top, 0) 0 0;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .topbar::before {
+      content: '';
+      display: block;
+      height: 4px;
+      background: repeating-linear-gradient(90deg, #4a5e1a 0, #4a5e1a 14px, transparent 14px, transparent 20px);
+    }
+    .topbar-inner {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 18px 14px;
+    }
+    .patch {
+      width: 44px; height: 44px; background: #2d3d12;
+      border: 2px solid #4a5e1a; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .patch svg { width: 24px; height: 24px; fill: #7a9e2a; }
+    .topbar-title {
+      font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700;
+      color: #a0c030; letter-spacing: 3px; text-transform: uppercase; line-height: 1;
+    }
+    .topbar-sub { font-size: 9px; color: #4a5e1a; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+    .scroll {
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 12px 12px calc(env(safe-area-inset-bottom, 0px) + 24px);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    /* Install */
+    .install-bar {
+      background: #1a1f0f; border: 1px solid #4a5e1a; border-radius: 3px;
+      padding: 12px 14px; display: none; align-items: center; gap: 10px;
+    }
+    .install-bar.show { display: flex; }
+    .install-bar p { flex: 1; font-size: 12px; color: #7a9e2a; line-height: 1.4; }
+    .install-bar button {
+      background: #2d3d12; color: #a0c030; border: 1px solid #7a9e2a; border-radius: 3px;
+      padding: 8px 14px; font-size: 11px; font-weight: 700; cursor: pointer;
+      font-family: 'Oswald', sans-serif; letter-spacing: 2px; text-transform: uppercase;
+    }
+    .install-x { background: none; border: none; color: #3d5010; font-size: 16px; cursor: pointer; }
+
+    .ios-tip {
+      background: #1a1f0f; border: 1px solid #2d3d12; border-radius: 3px;
+      padding: 12px 14px; font-size: 11px; color: #4a5e1a; line-height: 1.7; display: none;
+    }
+    .ios-tip.show { display: block; }
+    .ios-tip-x { float: right; background: none; border: none; color: #3d5010; font-size: 16px; cursor: pointer; }
+
+    /* Card */
+    .card {
+      background: #1a1f0f; border: 1px solid #2d3d12; border-radius: 3px;
+      padding: 14px; position: relative;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%; background: #4a5e1a; border-radius: 3px 0 0 3px;
+    }
+    .card-title {
+      font-family: 'Oswald', sans-serif; font-size: 10px; font-weight: 600;
+      color: #4a5e1a; letter-spacing: 3px; text-transform: uppercase;
+      margin-bottom: 14px; padding-left: 8px;
+    }
+
+    /* Gender */
+    .gender-row { display: flex; gap: 6px; margin-bottom: 14px; }
+    .g-btn {
+      flex: 1; padding: 10px; border-radius: 3px; border: 1px solid #2d3d12;
+      background: #111509; color: #4a5e1a; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; -webkit-tap-highlight-color: transparent;
+      font-family: 'Oswald', sans-serif; letter-spacing: 2px; text-transform: uppercase;
+    }
+    .g-btn.active { background: #2d3d12; border-color: #7a9e2a; color: #a0c030; }
+
+    /* Sliders */
+    .sl-wrap { margin-bottom: 16px; }
+    .sl-wrap:last-child { margin-bottom: 0; }
+    .sl-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .sl-name { font-size: 10px; color: #4a5e1a; letter-spacing: 2px; text-transform: uppercase; }
+    .sl-val {
+      font-family: 'Oswald', sans-serif; font-size: 18px; font-weight: 700;
+      color: #a0c030; background: #111509; border: 1px solid #2d3d12;
+      border-radius: 3px; padding: 2px 10px; letter-spacing: 2px;
+    }
+    input[type=range] {
+      width: 100%; -webkit-appearance: none; height: 4px;
+      border-radius: 2px; background: #2d3d12; outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 20px; height: 20px; border-radius: 2px;
+      background: #7a9e2a; border: 2px solid #a0c030;
+    }
+
+    /* Metrics */
+    .m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .m-cell { background: #111509; border: 1px solid #2d3d12; border-radius: 3px; padding: 10px; }
+    .m-label { font-size: 9px; color: #3d5010; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+    .m-val { font-family: 'Oswald', sans-serif; font-size: 28px; font-weight: 700; color: #a0c030; line-height: 1; }
+    .m-unit { font-size: 9px; color: #3d5010; margin-top: 3px; letter-spacing: 1px; }
+
+    /* BMI bar */
+    .bmi-bar { height: 6px; border-radius: 2px; position: relative; margin: 14px 0 6px; overflow: visible; }
+    .bmi-segs { display: flex; height: 100%; border-radius: 2px; overflow: hidden; }
+    .seg { flex: 1; }
+    .bmi-thumb {
+      position: absolute; top: -8px; width: 22px; height: 22px; border-radius: 2px;
+      background: #111509; border: 2px solid #a0c030; transform: translateX(-50%);
+      transition: left 0.4s ease; box-shadow: 0 0 8px rgba(160,192,48,0.5);
+    }
+    .bmi-ticks { display: flex; justify-content: space-between; }
+    .bmi-ticks span { font-size: 8px; color: #3d5010; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* Status */
+    .status-box {
+      margin-top: 10px; padding: 12px 14px; border-radius: 3px;
+      border: 1px solid #2d3d12; border-left: 4px solid #7a9e2a; transition: all 0.3s;
+    }
+    .status-rank { font-size: 9px; color: #4a5e1a; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 3px; }
+    .status-label {
+      font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+
+    /* Info */
+    .info-row { display: flex; gap: 8px; margin-top: 8px; }
+    .info-cell { flex: 1; background: #111509; border: 1px solid #2d3d12; border-radius: 3px; padding: 8px; }
+    .info-label { font-size: 9px; color: #3d5010; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
+    .info-val { font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 600; color: #7a9e2a; letter-spacing: 1px; }
+
+    /* Orders */
+    .orders-card {
+      background: #111509; border: 1px solid #2d3d12; border-left: 4px solid #7a9e2a;
+      border-radius: 3px; padding: 14px;
+    }
+    .orders-hd {
+      font-size: 9px; color: #4a5e1a; letter-spacing: 3px; text-transform: uppercase;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+    }
+    .orders-hd::after { content: ''; flex: 1; height: 1px; background: #2d3d12; }
+    .orders-text { font-size: 12px; color: #7a9e2a; line-height: 1.8; }
+
+    .blink { animation: blink 1.2s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .footer {
+      text-align: center; font-size: 9px; color: #2d3d12;
+      padding: 4px 0 2px; letter-spacing: 2px; text-transform: uppercase;
+    }
+  </style>
+</head>
+<body style="display:flex;flex-direction:column">
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="patch">
+        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93C9.33 17.79 7 14.5 7 11V7.18L12 5z"/></svg>
+      </div>
+      <div>
+        <div class="topbar-title">BODY STATS</div>
+        <div class="topbar-sub">FIELD ASSESSMENT UNIT // BMI TACTICAL CALCULATOR</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll">
+
+    <div class="install-bar" id="installBar">
+      <p>INSTALL AS FIELD APP — WORKS OFFLINE</p>
+      <button id="installBtn">INSTALL</button>
+      <button class="install-x" onclick="document.getElementById('installBar').classList.remove('show')">✕</button>
+    </div>
+
+    <div class="ios-tip" id="iosTip">
+      <button class="ios-tip-x" onclick="this.parentElement.classList.remove('show')">✕</button>
+      INSTALL ON iPHONE: TAP <strong style="color:#a0c030">SHARE</strong> → SELECT <strong style="color:#a0c030">"ADD TO HOME SCREEN"</strong>
+    </div>
+
+    <div class="card">
+      <div class="card-title">▶ SOLDIER DATA INPUT</div>
+      <div class="gender-row">
+        <button class="g-btn active" id="gM" onclick="setG('M')">▸ MALE</button>
+        <button class="g-btn" id="gF" onclick="setG('F')">▸ FEMALE</button>
+      </div>
+      <div class="sl-wrap">
+        <div class="sl-head"><span class="sl-name">AGE (YRS)</span><span class="sl-val" id="ageV">28</span></div>
+        <input type="range" min="10" max="90" step="1" value="28" id="age" oninput="upd()">
+      </div>
+      <div class="sl-wrap">
+        <div class="sl-head"><span class="sl-name">HEIGHT</span><span class="sl-val" id="htV">175 CM</span></div>
+        <input type="range" min="140" max="210" step="1" value="175" id="ht" oninput="upd()">
+      </div>
+      <div class="sl-wrap">
+        <div class="sl-head"><span class="sl-name">WEIGHT</span><span class="sl-val" id="wtV">70 KG</span></div>
+        <input type="range" min="30" max="150" step="1" value="70" id="wt" oninput="upd()">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">▶ TACTICAL METRICS</div>
+      <div class="m-grid">
+        <div class="m-cell">
+          <div class="m-label">BMI INDEX</div>
+          <div class="m-val" id="bmiV">—</div>
+          <div class="m-unit">KG / M²</div>
+        </div>
+        <div class="m-cell">
+          <div class="m-label">DAILY FUEL</div>
+          <div class="m-val" id="tdeeV">—</div>
+          <div class="m-unit">KCAL / DAY</div>
+        </div>
+        <div class="m-cell">
+          <div class="m-label">TARGET MASS</div>
+          <div class="m-val" id="ibwV">—</div>
+          <div class="m-unit">KG</div>
+        </div>
+        <div class="m-cell">
+          <div class="m-label">DEVIATION</div>
+          <div class="m-val" id="diffV">—</div>
+          <div class="m-unit" id="diffU">KG</div>
+        </div>
+      </div>
+
+      <div class="bmi-bar">
+        <div class="bmi-segs">
+          <div class="seg" style="background:#1a3a6a"></div>
+          <div class="seg" style="background:#3d6010"></div>
+          <div class="seg" style="background:#6b5010"></div>
+          <div class="seg" style="background:#7a1010"></div>
+        </div>
+        <div class="bmi-thumb" id="thumb" style="left:0%"></div>
+      </div>
+      <div class="bmi-ticks">
+        <span>UNDERWEIGHT</span><span>OPTIMAL</span><span>EXCESS</span><span>CRITICAL</span>
+      </div>
+
+      <div class="status-box" id="statusBox">
+        <div class="status-rank" id="statusRank">CLASSIFICATION</div>
+        <div class="status-label" id="statusLabel">AWAITING DATA <span class="blink">_</span></div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-cell">
+          <div class="info-label">OPTIMAL RANGE</div>
+          <div class="info-val" id="rangeV">— KG</div>
+        </div>
+        <div class="info-cell">
+          <div class="info-label">BASE METABOLIC</div>
+          <div class="info-val" id="bmrV">— KCAL</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="orders-card">
+      <div class="orders-hd">FIELD ORDERS</div>
+      <div class="orders-text" id="ordersText">AWAITING SOLDIER DATA INPUT. ENTER STATS TO RECEIVE MISSION BRIEFING.</div>
+    </div>
+
+    <div class="footer">CLASSIFIED // FOR AUTHORIZED PERSONNEL ONLY // NOT MEDICAL ADVICE</div>
+  </div>
+
+<script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
+let gender = 'M';
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  document.getElementById('installBar').classList.add('show');
+});
+document.getElementById('installBtn').onclick = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBar').classList.remove('show');
+};
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+if (isIOS && !isStandalone) document.getElementById('iosTip').classList.add('show');
+
+function setG(g) {
+  gender = g;
+  document.getElementById('gM').className = 'g-btn' + (g==='M' ? ' active' : '');
+  document.getElementById('gF').className = 'g-btn' + (g==='F' ? ' active' : '');
+  upd();
+}
+
+function upd() {
+  const age = +document.getElementById('age').value;
+  const h   = +document.getElementById('ht').value;
+  const w   = +document.getElementById('wt').value;
+  document.getElementById('ageV').textContent = age;
+  document.getElementById('htV').textContent  = h + ' CM';
+  document.getElementById('wtV').textContent  = w + ' KG';
+
+  const hm  = h / 100;
+  const bmi = w / (hm * hm);
+  const bmr = gender === 'M'
+    ? 10*w + 6.25*h - 5*age + 5
+    : 10*w + 6.25*h - 5*age - 161;
+  const tdee    = Math.round(bmr * 1.55);
+  const ibwLow  = 18.5 * hm * hm;
+  const ibwHigh = 22.9 * hm * hm;
+  const ibwMid  = (ibwLow + ibwHigh) / 2;
+  const diff    = w - ibwMid;
+
+  document.getElementById('bmiV').textContent  = bmi.toFixed(1);
+  document.getElementById('tdeeV').textContent = tdee.toLocaleString();
+  document.getElementById('ibwV').textContent  = ibwMid.toFixed(1);
+  document.getElementById('diffV').textContent = Math.abs(diff).toFixed(1);
+  document.getElementById('diffU').textContent =
+    diff > 0.5  ? 'KG EXCESS' :
+    diff < -0.5 ? 'KG DEFICIT' : 'KG — ON TARGET';
+  document.getElementById('rangeV').textContent = ibwLow.toFixed(1) + '–' + ibwHigh.toFixed(1) + ' KG';
+  document.getElementById('bmrV').textContent   = Math.round(bmr).toLocaleString() + ' KCAL';
+
+  const pct = Math.min(Math.max((bmi - 10) / 30, 0), 1) * 100;
+  document.getElementById('thumb').style.left = pct + '%';
+
+  let rank, label, bc, lc, orders;
+  if (bmi < 18.5) {
+    rank='STATUS: ALPHA-BLUE'; label='UNDERWEIGHT'; bc='rgba(26,58,106,0.3)'; lc='#378ADD';
+    orders='BMI '+bmi.toFixed(1)+' — MASS DEFICIT DETECTED. INCREASE CALORIC INTAKE BY '+Math.round(tdee*0.15).toLocaleString()+' KCAL/DAY. PRIORITY: HIGH-PROTEIN RATIONS. EXECUTE STRENGTH PROTOCOL 3X/WEEK. REPORT WEIGHT GAIN WEEKLY.';
+  } else if (bmi < 23) {
+    rank='STATUS: ALPHA-GREEN'; label='COMBAT READY'; bc='rgba(61,96,16,0.3)'; lc='#7a9e2a';
+    orders='BMI '+bmi.toFixed(1)+' — SOLDIER IS IN OPTIMAL COMBAT CONDITION. MAINTAIN CURRENT PROTOCOL. SUSTAIN TRAINING 5X/WEEK. PROTEIN TARGET: 2G/KG BODYWEIGHT. SLEEP 8 HRS. MISSION PERFORMANCE: PEAK.';
+  } else if (bmi < 25) {
+    rank='STATUS: BRAVO-AMBER'; label='SLIGHT EXCESS'; bc='rgba(107,80,16,0.3)'; lc='#BA7517';
+    orders='BMI '+bmi.toFixed(1)+' — MINOR WEIGHT SURPLUS DETECTED. REDUCE INTAKE BY '+Math.round(tdee*0.15).toLocaleString()+' KCAL/DAY. ADD CARDIO DRILL 3X/WEEK. ELIMINATE NON-ESSENTIAL RATIONS. RECHECK IN 30 DAYS.';
+  } else if (bmi < 30) {
+    rank='STATUS: BRAVO-RED'; label='UNFIT — REMEDIAL'; bc='rgba(122,16,16,0.3)'; lc='#E24B4A';
+    orders='BMI '+bmi.toFixed(1)+' — SOLDIER REQUIRES REMEDIAL FITNESS PROGRAM. CUT '+Math.round(tdee*0.2).toLocaleString()+' KCAL/DAY. MANDATORY CARDIO 5X/WEEK. CONSULT UNIT MEDIC. PROGRESS REVIEW IN 60 DAYS. NON-NEGOTIABLE.';
+  } else {
+    rank='STATUS: CHARLIE-CRITICAL'; label='MISSION COMPROMISED'; bc='rgba(122,16,16,0.4)'; lc='#E24B4A';
+    orders='BMI '+bmi.toFixed(1)+' — CRITICAL CONDITION. IMMEDIATE MEDICAL EVALUATION REQUIRED. SOLDIER NOT CLEARED FOR FIELD OPERATIONS. FULL MEDICAL SUPPORT PROGRAM TO BE ASSIGNED. EXECUTE IMMEDIATELY.';
+  }
+
+  const sb = document.getElementById('statusBox');
+  sb.style.background = bc; sb.style.borderLeftColor = lc;
+  document.getElementById('statusRank').textContent = rank;
+  document.getElementById('statusLabel').style.color = lc;
+  document.getElementById('statusLabel').innerHTML = label + ' <span class="blink">_</span>';
+  document.getElementById('ordersText').textContent = orders;
+}
+
+upd();
+</script>
+</body>
+</html>
